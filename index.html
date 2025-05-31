@@ -31,6 +31,19 @@
         body {
             background-color: #0f172a;
         }
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background-color: #1e3a8a;
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            background-color: #3b82f6;
+            transition: width 0.3s ease;
+        }
     </style>
 </head>
 <body class="text-gray-200">
@@ -67,6 +80,16 @@
                         <p class="text-sm">Generated video will appear here</p>
                     </div>
                     <video id="generatedVideo" class="hidden w-full h-full object-contain" controls></video>
+                </div>
+                <div id="progressContainer" class="hidden mt-2">
+                    <div class="flex justify-between text-xs text-slate-400 mb-1">
+                        <span>Generating video...</span>
+                        <span id="progressStatus">Checking status...</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div id="progressBarFill" class="progress-bar-fill" style="width: 0%"></div>
+                    </div>
+                    <div id="statusMessages" class="text-xs text-slate-400 mt-1 h-16 overflow-y-auto custom-scrollbar"></div>
                 </div>
             </div>
 
@@ -339,11 +362,16 @@
         const closeErrorBtn2 = document.getElementById('closeErrorBtn2');
         const successMessage = document.getElementById('successMessage');
         const errorMessage = document.getElementById('errorMessage');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressBarFill = document.getElementById('progressBarFill');
+        const progressStatus = document.getElementById('progressStatus');
+        const statusMessages = document.getElementById('statusMessages');
         
         // State
         let generationInProgress = false;
         let generationAborted = false;
         let apiKey = localStorage.getItem('geminiApiKey') || '';
+        let currentOperation = null;
         
         // Initialize UI
         document.getElementById('apiKeyInput').value = apiKey;
@@ -420,6 +448,9 @@
             emptyPreview.classList.add('hidden');
             generatedVideo.classList.add('hidden');
             videoPreview.classList.add('animate-pulse');
+            progressContainer.classList.remove('hidden');
+            progressBarFill.style.width = '0%';
+            statusMessages.innerHTML = '';
             
             try {
                 // Get all settings
@@ -438,6 +469,8 @@
                     if (generationAborted) break;
                     
                     try {
+                        addStatusMessage(`Starting generation for prompt: "${prompt}"`);
+                        
                         // Simulate API call (replace with actual API call)
                         const videoUrl = await generateVideoWithGemini({
                             prompt,
@@ -481,6 +514,7 @@
                 stopBtn.classList.add('hidden');
                 statusIndicator.classList.add('hidden');
                 videoPreview.classList.remove('animate-pulse');
+                progressContainer.classList.add('hidden');
             }
         });
         
@@ -493,6 +527,12 @@
             stopBtn.classList.add('hidden');
             statusIndicator.classList.add('hidden');
             videoPreview.classList.remove('animate-pulse');
+            progressContainer.classList.add('hidden');
+            
+            if (currentOperation) {
+                // In a real implementation, you would cancel the operation here
+                addStatusMessage('Generation cancelled by user');
+            }
         });
         
         // File Loading for Prompts
@@ -572,27 +612,95 @@
             });
         }
         
-        // Mock API function (replace with actual Gemini API call)
+        function addStatusMessage(message) {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString();
+            const messageElement = document.createElement('div');
+            messageElement.textContent = `[${timeString}] ${message}`;
+            statusMessages.appendChild(messageElement);
+            statusMessages.scrollTop = statusMessages.scrollHeight;
+        }
+        
+        function updateProgress(progress) {
+            progressBarFill.style.width = `${progress}%`;
+            progressStatus.textContent = `Progress: ${progress}%`;
+        }
+        
+        // Mock API function that simulates the actual Gemini API behavior
         async function generateVideoWithGemini(params) {
-            return new Promise((resolve, reject) => {
-                // Simulate API delay
-                setTimeout(() => {
+            return new Promise(async (resolve, reject) => {
+                if (generationAborted) {
+                    reject(new Error('Generation aborted by user'));
+                    return;
+                }
+                
+                // Simulate starting the operation
+                currentOperation = {
+                    name: `models/veo-2.0-generate-001/operations/${Math.random().toString(36).substring(2, 10)}`,
+                    metadata: null,
+                    done: false,
+                    error: null,
+                    response: null,
+                    result: null
+                };
+                
+                addStatusMessage(`Operation started: ${currentOperation.name}`);
+                updateProgress(10);
+                
+                // Simulate checking operation status every 10 seconds
+                const checkInterval = setInterval(() => {
                     if (generationAborted) {
+                        clearInterval(checkInterval);
+                        currentOperation = null;
                         reject(new Error('Generation aborted by user'));
                         return;
                     }
                     
-                    // In a real implementation, you would call the Gemini API here
-                    console.log('Calling Gemini API with params:', params);
+                    // Simulate progress
+                    const currentProgress = parseInt(progressBarFill.style.width) || 10;
+                    const newProgress = Math.min(currentProgress + 15, 90);
+                    updateProgress(newProgress);
                     
-                    // For demo purposes, we'll just return a sample video URL
-                    // In a real app, you would:
-                    // 1. Call the Gemini API with the provided parameters
-                    // 2. Wait for the video generation to complete
-                    // 3. Download or stream the generated video
-                    // 4. Return the video URL or data
+                    // Simulate operation status messages
+                    const statusMessage = `Video has not been generated yet. Check again in 10 seconds...\n${currentOperation.name} metadata=None done=None error=None response=None result=None`;
+                    addStatusMessage(statusMessage);
                     
-                    // Sample video URL for demo
+                }, 10000);
+                
+                // Simulate completion after 30-60 seconds
+                const completionTime = 30000 + Math.random() * 30000;
+                
+                setTimeout(() => {
+                    if (generationAborted) {
+                        clearInterval(checkInterval);
+                        currentOperation = null;
+                        reject(new Error('Generation aborted by user'));
+                        return;
+                    }
+                    
+                    clearInterval(checkInterval);
+                    updateProgress(100);
+                    
+                    // Simulate operation completion
+                    currentOperation.done = true;
+                    currentOperation.response = {
+                        generated_videos: [{
+                            video: {
+                                uri: `https://generativelanguage.googleapis.com/v1beta/files/${Math.random().toString(36).substring(2, 10)}:download?alt=media`,
+                                video_bytes: null,
+                                mime_type: null
+                            }
+                        }],
+                        rai_media_filtered_count: null,
+                        rai_media_filtered_reasons: null
+                    };
+                    currentOperation.result = currentOperation.response;
+                    
+                    const completionMessage = `Operation completed: ${currentOperation.name}\nmetadata=None done=True error=None response=${JSON.stringify(currentOperation.response)}\nresult=${JSON.stringify(currentOperation.result)}\nGenerated 1 video(s).\nVideo has been generated: ${currentOperation.response.generated_videos[0].video.uri}`;
+                    addStatusMessage(completionMessage);
+                    
+                    // For demo purposes, use a sample video URL
+                    // In a real implementation, you would use the actual video URL from the API response
                     const sampleVideos = [
                         'https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4',
                         'https://sample-videos.com/video123/mp4/720/sample_640x360.mp4',
@@ -600,8 +708,14 @@
                     ];
                     
                     const randomVideo = sampleVideos[Math.floor(Math.random() * sampleVideos.length)];
-                    resolve(randomVideo);
-                }, 3000);
+                    
+                    // Wait 5 seconds after completion before resolving to simulate download
+                    setTimeout(() => {
+                        currentOperation = null;
+                        resolve(randomVideo);
+                    }, 5000);
+                    
+                }, completionTime);
             });
         }
         
