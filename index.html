@@ -79,7 +79,7 @@
                         <i class="fas fa-video text-3xl mb-2"></i>
                         <p class="text-sm">Generated video will appear here</p>
                     </div>
-                    <video id="generatedVideo" class="hidden w-full h-full object-contain" controls></video>
+                    <video id="generatedVideo" class="hidden w-full h-full object-contain" controls autoplay></video>
                 </div>
                 <div id="progressContainer" class="hidden mt-2">
                     <div class="flex justify-between text-xs text-slate-400 mb-1">
@@ -279,28 +279,6 @@
         </div>
     </div>
 
-    <!-- Success Modal -->
-    <div id="successModal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center hidden z-50">
-        <div class="bg-slate-800 rounded-lg p-4 w-full max-w-sm mx-4">
-            <div class="flex justify-between items-center mb-3">
-                <h3 class="text-lg font-semibold text-green-400">Success</h3>
-                <button id="closeSuccessBtn" class="text-slate-400 hover:text-slate-200">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            
-            <div class="space-y-3 text-sm">
-                <p id="successMessage" class="text-slate-300">Video generated successfully!</p>
-                
-                <div class="pt-2">
-                    <button id="closeSuccessBtn2" class="w-full bg-blue-700 hover:bg-blue-600 text-white px-3 py-2 rounded-md text-sm transition-colors">
-                        Close
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Error Modal -->
     <div id="errorModal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center hidden z-50">
         <div class="bg-slate-800 rounded-lg p-4 w-full max-w-sm mx-4">
@@ -354,13 +332,9 @@
         const videoPreview = document.getElementById('videoPreview');
         const emptyPreview = document.getElementById('emptyPreview');
         const generatedVideo = document.getElementById('generatedVideo');
-        const successModal = document.getElementById('successModal');
         const errorModal = document.getElementById('errorModal');
-        const closeSuccessBtn = document.getElementById('closeSuccessBtn');
-        const closeSuccessBtn2 = document.getElementById('closeSuccessBtn2');
         const closeErrorBtn = document.getElementById('closeErrorBtn');
         const closeErrorBtn2 = document.getElementById('closeErrorBtn2');
-        const successMessage = document.getElementById('successMessage');
         const errorMessage = document.getElementById('errorMessage');
         const progressContainer = document.getElementById('progressContainer');
         const progressBarFill = document.getElementById('progressBarFill');
@@ -397,14 +371,6 @@
             donateModal.classList.add('hidden');
         });
         
-        closeSuccessBtn.addEventListener('click', () => {
-            successModal.classList.add('hidden');
-        });
-        
-        closeSuccessBtn2.addEventListener('click', () => {
-            successModal.classList.add('hidden');
-        });
-        
         closeErrorBtn.addEventListener('click', () => {
             errorModal.classList.add('hidden');
         });
@@ -417,7 +383,6 @@
             apiKey = document.getElementById('apiKeyInput').value.trim();
             localStorage.setItem('geminiApiKey', apiKey);
             settingsModal.classList.add('hidden');
-            showSuccess('Settings saved successfully!');
         });
         
         // Generate Button Logic
@@ -487,9 +452,6 @@
                         generatedVideo.classList.remove('hidden');
                         videoPreview.classList.remove('animate-pulse');
                         
-                        // Show success message
-                        showSuccess(`Video generated successfully for prompt: "${prompt}"`);
-                        
                     } catch (error) {
                         console.error('Error generating video:', error);
                         if (!generationAborted) {
@@ -530,7 +492,6 @@
             progressContainer.classList.add('hidden');
             
             if (currentOperation) {
-                // In a real implementation, you would cancel the operation here
                 addStatusMessage('Generation cancelled by user');
             }
         });
@@ -594,11 +555,6 @@
         });
         
         // Helper Functions
-        function showSuccess(message) {
-            successMessage.textContent = message;
-            successModal.classList.remove('hidden');
-        }
-        
         function showError(message) {
             errorMessage.textContent = message;
             errorModal.classList.remove('hidden');
@@ -624,6 +580,23 @@
         function updateProgress(progress) {
             progressBarFill.style.width = `${progress}%`;
             progressStatus.textContent = `Progress: ${progress}%`;
+        }
+        
+        function autoDownloadVideo(url, filename) {
+            addStatusMessage(`Starting download: ${filename}`);
+            
+            // Create a temporary anchor element to trigger download
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.target = '_blank';
+            
+            // Append to body, click and remove
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            
+            addStatusMessage(`Download completed: ${filename}`);
         }
         
         // Mock API function that simulates the actual Gemini API behavior
@@ -681,12 +654,22 @@
                     clearInterval(checkInterval);
                     updateProgress(100);
                     
+                    // Use working sample video URLs
+                    const workingSampleVideos = [
+                        'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+                        'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+                        'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+                        'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4'
+                    ];
+                    
+                    const randomVideo = workingSampleVideos[Math.floor(Math.random() * workingSampleVideos.length)];
+                    
                     // Simulate operation completion
                     currentOperation.done = true;
                     currentOperation.response = {
                         generated_videos: [{
                             video: {
-                                uri: `https://generativelanguage.googleapis.com/v1beta/files/${Math.random().toString(36).substring(2, 10)}:download?alt=media`,
+                                uri: randomVideo,
                                 video_bytes: null,
                                 mime_type: null
                             }
@@ -699,29 +682,27 @@
                     const completionMessage = `Operation completed: ${currentOperation.name}\nmetadata=None done=True error=None response=${JSON.stringify(currentOperation.response)}\nresult=${JSON.stringify(currentOperation.result)}\nGenerated 1 video(s).\nVideo has been generated: ${currentOperation.response.generated_videos[0].video.uri}`;
                     addStatusMessage(completionMessage);
                     
-                    // For demo purposes, use a sample video URL
-                    // In a real implementation, you would use the actual video URL from the API response
-                    const sampleVideos = [
-                        'https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4',
-                        'https://sample-videos.com/video123/mp4/720/sample_640x360.mp4',
-                        'https://sample-videos.com/video123/mp4/720/sample_1280x720.mp4'
-                    ];
-                    
-                    const randomVideo = sampleVideos[Math.floor(Math.random() * sampleVideos.length)];
-                    
-                    // Wait 5 seconds after completion before resolving to simulate download
+                    // Wait 2 seconds after completion before resolving to simulate processing
                     setTimeout(() => {
+                        // Auto-download the video
+                        autoDownloadVideo(randomVideo, `generated_video_${Date.now()}.mp4`);
+                        
                         currentOperation = null;
                         resolve(randomVideo);
-                    }, 5000);
+                    }, 2000);
                     
                 }, completionTime);
             });
         }
-        
+
         // Initialize UI states
         ratio16_9.click(); // Set 16:9 as default
         veo2Btn.click();   // Set Veo 2 as default
+
+        // Add event listener for when video is loaded
+        generatedVideo.addEventListener('loadeddata', function() {
+            this.play().catch(e => console.log('Autoplay prevented:', e));
+        });
     </script>
 </body>
 </html>
