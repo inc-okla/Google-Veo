@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Generation Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .rotate {
+            animation: rotation 2s infinite linear;
+        }
+        @keyframes rotation {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(359deg);
+            }
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #1e40af;
+            border-radius: 2px;
+        }
+        body {
+            background-color: #0f172a;
+        }
+    </style>
+</head>
+<body class="text-gray-200">
+    <div class="container mx-auto p-4 max-w-5xl">
+        <!-- Header -->
+        <header class="flex justify-between items-center mb-4">
+            <h1 class="text-xl font-bold text-blue-300">VideoGen AI</h1>
+            <div class="flex gap-2">
+                <button id="donateBtn" class="bg-blue-900 hover:bg-blue-800 text-blue-200 px-3 py-1 rounded-lg flex items-center gap-1 text-sm transition-colors">
+                    <i class="fas fa-heart"></i> Donate
+                </button>
+                <button id="settingsBtn" class="bg-blue-900 hover:bg-blue-800 text-blue-200 px-3 py-1 rounded-lg flex items-center gap-1 text-sm transition-colors">
+                    <i class="fas fa-cog"></i> Settings
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="flex flex-col lg:flex-row gap-4">
+            <!-- Left Side - Preview -->
+            <div class="lg:w-2/3 bg-slate-800 rounded-lg p-3 shadow">
+                <div class="flex justify-between items-center mb-3">
+                    <h2 class="text-lg font-semibold text-blue-200">Preview</h2>
+                    <div class="flex gap-2">
+                        <span id="statusIndicator" class="hidden items-center gap-1 text-xs">
+                            <i class="fas fa-circle text-yellow-400 animate-pulse"></i>
+                            <span>Processing...</span>
+                        </span>
+                    </div>
+                </div>
+                <div id="videoPreview" class="bg-slate-900 rounded-md aspect-video flex items-center justify-center border border-slate-700">
+                    <div id="emptyPreview" class="text-center p-4 text-slate-400">
+                        <i class="fas fa-video text-3xl mb-2"></i>
+                        <p class="text-sm">Generated video will appear here</p>
+                    </div>
+                    <video id="generatedVideo" class="hidden w-full h-full object-contain" controls></video>
+                </div>
+            </div>
+
+            <!-- Right Side - Controls -->
+            <div class="lg:w-1/3 bg-slate-800 rounded-lg p-3 shadow">
+                <h2 class="text-lg font-semibold text-blue-200 mb-3">Settings</h2>
+                
+                <!-- Model Selection -->
+                <div class="mb-3">
+                    <label class="block text-blue-200 text-sm mb-1">Model</label>
+                    <div class="flex gap-2">
+                        <button id="veo2Btn" class="bg-blue-900 hover:bg-blue-800 text-blue-200 px-3 py-1 rounded-md text-sm transition-colors">
+                            Veo 2
+                        </button>
+                        <button id="veo3Btn" class="bg-slate-700 text-slate-500 px-3 py-1 rounded-md text-sm cursor-not-allowed" disabled>
+                            Veo 3
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Aspect Ratio -->
+                <div class="mb-3">
+                    <label class="block text-blue-200 text-sm mb-1">Aspect Ratio</label>
+                    <div class="flex gap-2">
+                        <button id="ratio16_9" class="bg-blue-900 hover:bg-blue-800 text-blue-200 px-3 py-1 rounded-md text-sm transition-colors flex items-center gap-1">
+                            <i class="fas fa-expand"></i> 16:9
+                        </button>
+                        <button id="ratio9_16" class="bg-slate-900 hover:bg-slate-800 text-blue-200 px-3 py-1 rounded-md text-sm transition-colors flex items-center gap-1">
+                            <i class="fas fa-compress"></i> 9:16
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Video Duration -->
+                <div class="mb-3">
+                    <label class="block text-blue-200 text-sm mb-1">Duration (sec)</label>
+                    <select id="durationSelect" class="w-full bg-slate-900 border border-slate-700 rounded-md p-1 text-sm text-white">
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8">8</option>
+                    </select>
+                </div>
+
+                <!-- Person Generation -->
+                <div class="mb-3">
+                    <label class="block text-blue-200 text-sm mb-1">Person Generation</label>
+                    <select id="personGeneration" class="w-full bg-slate-900 border border-slate-700 rounded-md p-1 text-sm text-white">
+                        <option value="allow_all">Allow All</option>
+                        <option value="allow_adult">Allow Adult Only</option>
+                        <option value="dont_allow">Don't Allow</option>
+                    </select>
+                </div>
+
+                <!-- Number of Videos -->
+                <div class="mb-3">
+                    <label class="block text-blue-200 text-sm mb-1">Number of Videos</label>
+                    <select id="numberOfVideos" class="w-full bg-slate-900 border border-slate-700 rounded-md p-1 text-sm text-white">
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                    </select>
+                </div>
+
+                <!-- Prompts -->
+                <div class="mb-3">
+                    <label class="block text-blue-200 text-sm mb-1">Prompts (one per line)</label>
+                    <textarea id="promptsTextarea" rows="3" class="w-full bg-slate-900 border border-slate-700 rounded-md p-2 text-sm text-white custom-scrollbar"></textarea>
+                    <div class="flex justify-between mt-1">
+                        <button id="loadTxtBtn" class="text-blue-400 hover:text-blue-300 text-xs flex items-center gap-1">
+                            <i class="fas fa-file-import"></i> Load .txt
+                        </button>
+                        <input type="file" id="fileInput" class="hidden" accept=".txt">
+                        <button id="clearPromptsBtn" class="text-blue-400 hover:text-blue-300 text-xs flex items-center gap-1">
+                            <i class="fas fa-trash"></i> Clear
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Negative Prompts -->
+                <div class="mb-4">
+                    <label class="block text-blue-200 text-sm mb-1">Negative Prompts</label>
+                    <textarea id="negativePromptsTextarea" rows="3" class="w-full bg-slate-900 border border-slate-700 rounded-md p-2 text-sm text-white custom-scrollbar"></textarea>
+                    <div class="flex justify-between mt-1">
+                        <button id="loadNegativeTxtBtn" class="text-blue-400 hover:text-blue-300 text-xs flex items-center gap-1">
+                            <i class="fas fa-file-import"></i> Load .txt
+                        </button>
+                        <input type="file" id="negativeFileInput" class="hidden" accept=".txt">
+                        <button id="clearNegativePromptsBtn" class="text-blue-400 hover:text-blue-300 text-xs flex items-center gap-1">
+                            <i class="fas fa-trash"></i> Clear
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Generate Button -->
+                <div class="flex gap-2">
+                    <button id="generateBtn" class="flex-1 bg-blue-700 hover:bg-blue-600 text-white px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-1">
+                        <i class="fas fa-play"></i> Generate
+                    </button>
+                    <button id="stopBtn" class="bg-red-700 hover:bg-red-600 text-white px-3 py-2 rounded-md text-sm font-medium transition-colors hidden">
+                        <i class="fas fa-stop"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center hidden z-50">
+        <div class="bg-slate-800 rounded-lg p-4 w-full max-w-sm mx-4">
+            <div class="flex justify-between items-center mb-3">
+                <h3 class="text-lg font-semibold text-blue-200">Settings</h3>
+                <button id="closeSettingsBtn" class="text-slate-400 hover:text-slate-200">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-3">
+                <!-- Gemini API Key -->
+                <div>
+                    <label class="block text-blue-200 text-sm mb-1">Gemini API Key</label>
+                    <input type="password" id="apiKeyInput" class="w-full bg-slate-900 border border-slate-700 rounded-md p-2 text-sm text-white">
+                </div>
+                
+                <!-- Machine ID -->
+                <div class="flex items-center justify-between text-sm">
+                    <label class="block text-blue-200">Machine ID</label>
+                    <span class="bg-slate-900 px-2 py-1 rounded-md text-blue-200">ID-7890-XYZ</span>
+                </div>
+                
+                <!-- License -->
+                <div class="flex items-center justify-between text-sm">
+                    <label class="block text-blue-200">License</label>
+                    <span class="bg-slate-900 px-2 py-1 rounded-md text-blue-200">Exp: 2024-12-31</span>
+                </div>
+                
+                <!-- Save Button -->
+                <div class="pt-2">
+                    <button id="saveSettingsBtn" class="w-full bg-blue-700 hover:bg-blue-600 text-white px-3 py-2 rounded-md text-sm transition-colors">
+                        Save Settings
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Donate Modal -->
+    <div id="donateModal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center hidden z-50">
+        <div class="bg-slate-800 rounded-lg p-4 w-full max-w-sm mx-4">
+            <div class="flex justify-between items-center mb-3">
+                <h3 class="text-lg font-semibold text-blue-200">Support Development</h3>
+                <button id="closeDonateBtn" class="text-slate-400 hover:text-slate-200">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-3 text-sm">
+                <p class="text-slate-300">If you find this tool useful, consider supporting its development:</p>
+                
+                <div class="bg-slate-900 rounded-md p-3">
+                    <h4 class="font-medium text-blue-200 mb-1">Bitcoin</h4>
+                    <div class="flex items-center justify-between">
+                        <code class="text-xs bg-slate-800 p-1 rounded">bc1qxy2kgdygjrsqtzq2n0yrf2493w83</code>
+                        <button onclick="copyToClipboard('bc1qxy2kgdygjrsqtzq2n0yrf2493w83')" class="text-blue-400 hover:text-blue-300 ml-2">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="bg-slate-900 rounded-md p-3">
+                    <h4 class="font-medium text-blue-200 mb-1">Ethereum</h4>
+                    <div class="flex items-center justify-between">
+                        <code class="text-xs bg-slate-800 p-1 rounded">0x71C7656EC7ab88b098defB751B7401B5f6d8976F</code>
+                        <button onclick="copyToClipboard('0x71C7656EC7ab88b098defB751B7401B5f6d8976F')" class="text-blue-400 hover:text-blue-300 ml-2">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="pt-2">
+                    <button id="closeDonateBtn2" class="w-full bg-blue-700 hover:bg-blue-600 text-white px-3 py-2 rounded-md text-sm transition-colors">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div id="successModal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center hidden z-50">
+        <div class="bg-slate-800 rounded-lg p-4 w-full max-w-sm mx-4">
+            <div class="flex justify-between items-center mb-3">
+                <h3 class="text-lg font-semibold text-green-400">Success</h3>
+                <button id="closeSuccessBtn" class="text-slate-400 hover:text-slate-200">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-3 text-sm">
+                <p id="successMessage" class="text-slate-300">Video generated successfully!</p>
+                
+                <div class="pt-2">
+                    <button id="closeSuccessBtn2" class="w-full bg-blue-700 hover:bg-blue-600 text-white px-3 py-2 rounded-md text-sm transition-colors">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error Modal -->
+    <div id="errorModal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center hidden z-50">
+        <div class="bg-slate-800 rounded-lg p-4 w-full max-w-sm mx-4">
+            <div class="flex justify-between items-center mb-3">
+                <h3 class="text-lg font-semibold text-red-400">Error</h3>
+                <button id="closeErrorBtn" class="text-slate-400 hover:text-slate-200">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-3 text-sm">
+                <p id="errorMessage" class="text-slate-300">An error occurred while generating the video.</p>
+                
+                <div class="pt-2">
+                    <button id="closeErrorBtn2" class="w-full bg-blue-700 hover:bg-blue-600 text-white px-3 py-2 rounded-md text-sm transition-colors">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const settingsBtn = document.getElementById('settingsBtn');
+        const settingsModal = document.getElementById('settingsModal');
+        const closeSettingsBtn = document.getElementById('closeSettingsBtn');
+        const saveSettingsBtn = document.getElementById('saveSettingsBtn');
+        const donateBtn = document.getElementById('donateBtn');
+        const donateModal = document.getElementById('donateModal');
+        const closeDonateBtn = document.getElementById('closeDonateBtn');
+        const closeDonateBtn2 = document.getElementById('closeDonateBtn2');
+        const generateBtn = document.getElementById('generateBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const statusIndicator = document.getElementById('statusIndicator');
+        const fileInput = document.getElementById('fileInput');
+        const loadTxtBtn = document.getElementById('loadTxtBtn');
+        const clearPromptsBtn = document.getElementById('clearPromptsBtn');
+        const negativeFileInput = document.getElementById('negativeFileInput');
+        const loadNegativeTxtBtn = document.getElementById('loadNegativeTxtBtn');
+        const clearNegativePromptsBtn = document.getElementById('clearNegativePromptsBtn');
+        const promptsTextarea = document.getElementById('promptsTextarea');
+        const negativePromptsTextarea = document.getElementById('negativePromptsTextarea');
+        const ratio16_9 = document.getElementById('ratio16_9');
+        const ratio9_16 = document.getElementById('ratio9_16');
+        const veo2Btn = document.getElementById('veo2Btn');
+        const veo3Btn = document.getElementById('veo3Btn');
+        const durationSelect = document.getElementById('durationSelect');
+        const personGeneration = document.getElementById('personGeneration');
+        const numberOfVideos = document.getElementById('numberOfVideos');
+        const videoPreview = document.getElementById('videoPreview');
+        const emptyPreview = document.getElementById('emptyPreview');
+        const generatedVideo = document.getElementById('generatedVideo');
+        const successModal = document.getElementById('successModal');
+        const errorModal = document.getElementById('errorModal');
+        const closeSuccessBtn = document.getElementById('closeSuccessBtn');
+        const closeSuccessBtn2 = document.getElementById('closeSuccessBtn2');
+        const closeErrorBtn = document.getElementById('closeErrorBtn');
+        const closeErrorBtn2 = document.getElementById('closeErrorBtn2');
+        const successMessage = document.getElementById('successMessage');
+        const errorMessage = document.getElementById('errorMessage');
+        
+        // State
+        let generationInProgress = false;
+        let generationAborted = false;
+        let apiKey = localStorage.getItem('geminiApiKey') || '';
+        
+        // Initialize UI
+        document.getElementById('apiKeyInput').value = apiKey;
+        
+        // Modal Toggle
+        settingsBtn.addEventListener('click', () => {
+            settingsModal.classList.remove('hidden');
+        });
+        
+        closeSettingsBtn.addEventListener('click', () => {
+            settingsModal.classList.add('hidden');
+        });
+        
+        donateBtn.addEventListener('click', () => {
+            donateModal.classList.remove('hidden');
+        });
+        
+        closeDonateBtn.addEventListener('click', () => {
+            donateModal.classList.add('hidden');
+        });
+        
+        closeDonateBtn2.addEventListener('click', () => {
+            donateModal.classList.add('hidden');
+        });
+        
+        closeSuccessBtn.addEventListener('click', () => {
+            successModal.classList.add('hidden');
+        });
+        
+        closeSuccessBtn2.addEventListener('click', () => {
+            successModal.classList.add('hidden');
+        });
+        
+        closeErrorBtn.addEventListener('click', () => {
+            errorModal.classList.add('hidden');
+        });
+        
+        closeErrorBtn2.addEventListener('click', () => {
+            errorModal.classList.add('hidden');
+        });
+        
+        saveSettingsBtn.addEventListener('click', () => {
+            apiKey = document.getElementById('apiKeyInput').value.trim();
+            localStorage.setItem('geminiApiKey', apiKey);
+            settingsModal.classList.add('hidden');
+            showSuccess('Settings saved successfully!');
+        });
+        
+        // Generate Button Logic
+        generateBtn.addEventListener('click', async () => {
+            if (generationInProgress) return;
+            
+            const prompts = promptsTextarea.value.trim();
+            if (!prompts) {
+                showError('Please enter at least one prompt');
+                return;
+            }
+            
+            if (!apiKey) {
+                showError('Please enter your Gemini API key in settings');
+                settingsModal.classList.remove('hidden');
+                return;
+            }
+            
+            // Disable generate button and show processing state
+            generationInProgress = true;
+            generationAborted = false;
+            generateBtn.disabled = true;
+            generateBtn.innerHTML = '<i class="fas fa-circle-notch rotate"></i> Processing...';
+            stopBtn.classList.remove('hidden');
+            statusIndicator.classList.remove('hidden');
+            
+            // Hide empty preview and show loading state
+            emptyPreview.classList.add('hidden');
+            generatedVideo.classList.add('hidden');
+            videoPreview.classList.add('animate-pulse');
+            
+            try {
+                // Get all settings
+                const aspectRatio = ratio16_9.classList.contains('bg-blue-900') ? '16:9' : '9:16';
+                const duration = parseInt(durationSelect.value);
+                const personGen = personGeneration.value;
+                const numVideos = parseInt(numberOfVideos.value);
+                const negativePrompt = negativePromptsTextarea.value.trim() || 
+                    "blurry, 3D render, glowing screen, logo, watermark, fake keyboard, extra fingers, text overlay, flat lighting, branding, artificial reflection, unrealistic background";
+                
+                // Split prompts by newline and filter out empty lines
+                const promptLines = prompts.split('\n').filter(line => line.trim());
+                
+                // Process each prompt one by one
+                for (const prompt of promptLines) {
+                    if (generationAborted) break;
+                    
+                    try {
+                        // Simulate API call (replace with actual API call)
+                        const videoUrl = await generateVideoWithGemini({
+                            prompt,
+                            negativePrompt,
+                            aspectRatio,
+                            duration,
+                            personGen,
+                            numVideos,
+                            apiKey
+                        });
+                        
+                        // Display the generated video
+                        generatedVideo.src = videoUrl;
+                        generatedVideo.classList.remove('hidden');
+                        videoPreview.classList.remove('animate-pulse');
+                        
+                        // Show success message
+                        showSuccess(`Video generated successfully for prompt: "${prompt}"`);
+                        
+                    } catch (error) {
+                        console.error('Error generating video:', error);
+                        if (!generationAborted) {
+                            showError(`Failed to generate video for prompt: "${prompt}" - ${error.message}`);
+                        }
+                    }
+                    
+                    // Clear the processed prompt
+                    promptsTextarea.value = promptsTextarea.value.replace(prompt, '').trim();
+                }
+                
+            } catch (error) {
+                console.error('Error in generation process:', error);
+                if (!generationAborted) {
+                    showError('An error occurred during video generation: ' + error.message);
+                }
+            } finally {
+                // Reset UI state
+                generationInProgress = false;
+                generateBtn.disabled = false;
+                generateBtn.innerHTML = '<i class="fas fa-play"></i> Generate';
+                stopBtn.classList.add('hidden');
+                statusIndicator.classList.add('hidden');
+                videoPreview.classList.remove('animate-pulse');
+            }
+        });
+        
+        // Stop Button Logic
+        stopBtn.addEventListener('click', () => {
+            generationAborted = true;
+            generationInProgress = false;
+            generateBtn.disabled = false;
+            generateBtn.innerHTML = '<i class="fas fa-play"></i> Generate';
+            stopBtn.classList.add('hidden');
+            statusIndicator.classList.add('hidden');
+            videoPreview.classList.remove('animate-pulse');
+        });
+        
+        // File Loading for Prompts
+        loadTxtBtn.addEventListener('click', () => fileInput.click());
+        loadNegativeTxtBtn.addEventListener('click', () => negativeFileInput.click());
+        
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    promptsTextarea.value = event.target.result;
+                };
+                reader.readAsText(file);
+            }
+        });
+        
+        negativeFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    negativePromptsTextarea.value = event.target.result;
+                };
+                reader.readAsText(file);
+            }
+        });
+        
+        // Clear Buttons
+        clearPromptsBtn.addEventListener('click', () => {
+            promptsTextarea.value = '';
+        });
+        
+        clearNegativePromptsBtn.addEventListener('click', () => {
+            negativePromptsTextarea.value = '';
+        });
+        
+        // Aspect Ratio Toggle
+        ratio16_9.addEventListener('click', () => {
+            ratio16_9.classList.remove('bg-slate-900', 'hover:bg-slate-800');
+            ratio16_9.classList.add('bg-blue-900', 'hover:bg-blue-800');
+            ratio9_16.classList.remove('bg-blue-900', 'hover:bg-blue-800');
+            ratio9_16.classList.add('bg-slate-900', 'hover:bg-slate-800');
+        });
+        
+        ratio9_16.addEventListener('click', () => {
+            ratio9_16.classList.remove('bg-slate-900', 'hover:bg-slate-800');
+            ratio9_16.classList.add('bg-blue-900', 'hover:bg-blue-800');
+            ratio16_9.classList.remove('bg-blue-900', 'hover:bg-blue-800');
+            ratio16_9.classList.add('bg-slate-900', 'hover:bg-slate-800');
+        });
+        
+        // Model Selection
+        veo2Btn.addEventListener('click', () => {
+            veo2Btn.classList.remove('bg-slate-900', 'hover:bg-slate-800');
+            veo2Btn.classList.add('bg-blue-900', 'hover:bg-blue-800');
+            veo3Btn.classList.remove('bg-blue-900', 'hover:bg-blue-800');
+            veo3Btn.classList.add('bg-slate-700', 'text-slate-500');
+        });
+        
+        // Helper Functions
+        function showSuccess(message) {
+            successMessage.textContent = message;
+            successModal.classList.remove('hidden');
+        }
+        
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorModal.classList.remove('hidden');
+        }
+        
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Address copied to clipboard!');
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+            });
+        }
+        
+        // Mock API function (replace with actual Gemini API call)
+        async function generateVideoWithGemini(params) {
+            return new Promise((resolve, reject) => {
+                // Simulate API delay
+                setTimeout(() => {
+                    if (generationAborted) {
+                        reject(new Error('Generation aborted by user'));
+                        return;
+                    }
+                    
+                    // In a real implementation, you would call the Gemini API here
+                    console.log('Calling Gemini API with params:', params);
+                    
+                    // For demo purposes, we'll just return a sample video URL
+                    // In a real app, you would:
+                    // 1. Call the Gemini API with the provided parameters
+                    // 2. Wait for the video generation to complete
+                    // 3. Download or stream the generated video
+                    // 4. Return the video URL or data
+                    
+                    // Sample video URL for demo
+                    const sampleVideos = [
+                        'https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4',
+                        'https://sample-videos.com/video123/mp4/720/sample_640x360.mp4',
+                        'https://sample-videos.com/video123/mp4/720/sample_1280x720.mp4'
+                    ];
+                    
+                    const randomVideo = sampleVideos[Math.floor(Math.random() * sampleVideos.length)];
+                    resolve(randomVideo);
+                }, 3000);
+            });
+        }
+        
+        // Initialize UI states
+        ratio16_9.click(); // Set 16:9 as default
+        veo2Btn.click();   // Set Veo 2 as default
+    </script>
+</body>
+</html>
