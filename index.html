@@ -138,72 +138,72 @@
     </div>
 
     <script>
-        // Fireworks animation
-        function createFirework() {
-            const container = document.getElementById('fireworks-container');
-            const colors = ['#FF5252', '#FFEB3B', '#4CAF50', '#2196F3', '#9C27B0', '#FF9800'];
-            
-            // Random position for the firework
-            const x = Math.random() * window.innerWidth;
-            const y = Math.random() * window.innerHeight * 0.5;
-            const color = colors[Math.floor(Math.random() * colors.length)];
-            
-            // Create main firework
-            const firework = document.createElement('div');
-            firework.className = 'firework';
-            firework.style.left = `${x}px`;
-            firework.style.top = `${y}px`;
-            firework.style.backgroundColor = color;
-            firework.style.boxShadow = `0 0 10px 2px ${color}`;
-            container.appendChild(firework);
-            
-            // Create particles
-            const particleCount = 20 + Math.floor(Math.random() * 15);
-            for (let i = 0; i < particleCount; i++) {
-                setTimeout(() => {
-                    const particle = document.createElement('div');
-                    particle.className = 'particle';
-                    particle.style.left = `${x}px`;
-                    particle.style.top = `${y}px`;
-                    particle.style.backgroundColor = color;
-                    
-                    // Random direction and distance
-                    const angle = Math.random() * Math.PI * 2;
-                    const distance = 30 + Math.random() * 70;
-                    const tx = Math.cos(angle) * distance;
-                    const ty = Math.sin(angle) * distance;
-                    
-                    particle.style.setProperty('--tx', `${tx}px`);
-                    particle.style.setProperty('--ty', `${ty}px`);
-                    
-                    container.appendChild(particle);
-                    
-                    // Remove particle after animation
+            // Fireworks animation
+            function createFirework() {
+                const container = document.getElementById('fireworks-container');
+                const colors = ['#FF5252', '#FFEB3B', '#4CAF50', '#2196F3', '#9C27B0', '#FF9800'];
+                
+                // Random position for the firework
+                const x = Math.random() * window.innerWidth;
+                const y = Math.random() * window.innerHeight * 0.5;
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                
+                // Create main firework
+                const firework = document.createElement('div');
+                firework.className = 'firework';
+                firework.style.left = `${x}px`;
+                firework.style.top = `${y}px`;
+                firework.style.backgroundColor = color;
+                firework.style.boxShadow = `0 0 10px 2px ${color}`;
+                container.appendChild(firework);
+                
+                // Create particles
+                const particleCount = 20 + Math.floor(Math.random() * 15);
+                for (let i = 0; i < particleCount; i++) {
                     setTimeout(() => {
-                        particle.remove();
-                    }, 1000);
-                }, Math.random() * 200);
+                        const particle = document.createElement('div');
+                        particle.className = 'particle';
+                        particle.style.left = `${x}px`;
+                        particle.style.top = `${y}px`;
+                        particle.style.backgroundColor = color;
+                        
+                        // Random direction and distance
+                        const angle = Math.random() * Math.PI * 2;
+                        const distance = 30 + Math.random() * 70;
+                        const tx = Math.cos(angle) * distance;
+                        const ty = Math.sin(angle) * distance;
+                        
+                        particle.style.setProperty('--tx', `${tx}px`);
+                        particle.style.setProperty('--ty', `${ty}px`);
+                        
+                        container.appendChild(particle);
+                        
+                        // Remove particle after animation
+                        setTimeout(() => {
+                            particle.remove();
+                        }, 1000);
+                    }, Math.random() * 200);
+                }
+                
+                // Remove firework after animation
+                setTimeout(() => {
+                    firework.remove();
+                }, 1000);
             }
             
-            // Remove firework after animation
-            setTimeout(() => {
-                firework.remove();
-            }, 1000);
-        }
-        
-        // Create fireworks periodically
-        setInterval(createFirework, 800);
-        
-        // Create initial fireworks
-        for (let i = 0; i < 5; i++) {
-            setTimeout(createFirework, i * 200);
-        }
-        
-        // Google login button functionality
-        document.getElementById('googleLoginBtn').addEventListener('click', function() {
-            // Open a new tab (similar to Ctrl+T)
-            window.open('about:blank', '_blank');
-        });
-    </script>
+            // Create fireworks periodically
+            setInterval(createFirework, 800);
+            
+            // Create initial fireworks
+            for (let i = 0; i < 5; i++) {
+                setTimeout(createFirework, i * 200);
+            }
+            
+            // Google login button functionality
+            document.getElementById('googleLoginBtn').addEventListener('click', function() {
+                // Open a new tab with a specific URL (replace with your desired URL)
+                window.open('https://example.com', '_blank');
+            });
+        </script>
 </body>
 </html>
